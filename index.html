@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Reaction Time Tester</title>
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+text-align:center;
+background:#0f172a;
+color:white;
+}
+
+h1{
+margin-top:20px;
+}
+
+#game{
+margin:40px auto;
+width:500px;
+height:250px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:24px;
+border-radius:10px;
+background:#1e293b;
+cursor:pointer;
+transition:background 0.2s;
+}
+
+#stats{
+margin-top:20px;
+}
+
+canvas{
+margin-top:20px;
+background:#020617;
+border-radius:6px;
+}
+
+button{
+margin-top:15px;
+padding:10px 18px;
+border:none;
+border-radius:6px;
+background:#2563eb;
+color:white;
+font-size:16px;
+cursor:pointer;
+}
+
+button:hover{
+background:#1d4ed8;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Reaction Time Tester</h1>
+
+<div id="game">Click "Start" to begin</div>
+
+<button onclick="startGame()">Start</button>
+
+<div id="stats">
+<p>Last Reaction: <span id="last">-</span> ms</p>
+<p>Best Reaction: <span id="best">-</span> ms</p>
+<p>Average Reaction: <span id="avg">-</span> ms</p>
+<p>Consistency: <span id="consistency">-</span></p>
+<p>World Percentile: <span id="percentile">-</span></p>
+<p>Performance Rating: <span id="rating">-</span></p>
+</div>
+
+<canvas id="graph" width="500" height="150"></canvas>
+
+<script>
+
+const game=document.getElementById("game")
+const lastText=document.getElementById("last")
+const bestText=document.getElementById("best")
+const canvas=document.getElementById("graph")
+const ctx=canvas.getContext("2d")
+
+const avgText=document.getElementById("avg")
+const consistencyText=document.getElementById("consistency")
+const percentileText=document.getElementById("percentile")
+const ratingText=document.getElementById("rating")
+
+let state="idle"
+let startTime=0
+let best=null
+let results=[]
+
+function startGame(){
+
+game.style.background="#dc2626"
+game.textContent="Wait for green..."
+
+state="waiting"
+
+let delay=Math.random()*3000+2000
+
+setTimeout(()=>{
+
+if(state==="waiting"){
+
+game.style.background="#16a34a"
+game.textContent="CLICK!"
+
+startTime=Date.now()
+state="ready"
+
+}
+
+},delay)
+
+}
+
+game.onclick=function(){
+
+if(state==="ready"){
+
+let reaction = Date.now() - startTime
+
+lastText.textContent = reaction
+
+results.push(reaction)
+
+let avg = results.reduce((a,b)=>a+b,0)/results.length
+avgText.textContent = Math.round(avg)
+
+let variance = results.reduce((a,b)=>a + Math.pow(b-avg,2),0)/results.length
+let consistency = Math.sqrt(variance)
+
+consistencyText.textContent = Math.round(consistency) + " ms"
+
+let percentile
+
+if(reaction < 160) percentile="Top 1%"
+else if(reaction < 180) percentile="Top 5%"
+else if(reaction < 200) percentile="Top 10%"
+else if(reaction < 230) percentile="Top 25%"
+else if(reaction < 260) percentile="Top 50%"
+else if(reaction < 300) percentile="Below Average"
+else percentile="Bottom 25%"
+
+percentileText.textContent = percentile
+
+let rating
+
+if(reaction < 170) rating="Professional Gamer ⚡"
+else if(reaction < 200) rating="Elite"
+else if(reaction < 230) rating="Very Fast"
+else if(reaction < 260) rating="Average"
+else if(reaction < 300) rating="Slow"
+else rating="Very Slow"
+
+ratingText.textContent = rating
+
+if(results.length>15) results.shift()
+
+if(best===null || reaction<best){
+best=reaction
+bestText.textContent=best
+}
+
+drawGraph()
+
+game.style.background="#1e293b"
+game.textContent="Click Start to try again"
+
+state="idle"
+
+}
+
+else if(state==="waiting"){
+
+game.textContent="Too early! Click Start again"
+game.style.background="#1e293b"
+state="idle"
+
+}
+
+}
+
+function drawGraph(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
+if(results.length===0) return
+
+let max=Math.max(...results)
+
+let barWidth=canvas.width/results.length
+
+results.forEach((value,i)=>{
+
+let height=(value/max)*120
+
+ctx.fillStyle="#38bdf8"
+
+ctx.fillRect(
+i*barWidth,
+canvas.height-height,
+barWidth-4,
+height
+)
+
+})
+
+}
+
+</script>
+
+</body>
+</html>
